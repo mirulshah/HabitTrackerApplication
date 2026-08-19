@@ -5,11 +5,13 @@ using HabitTracker.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using HabitTracker.Application.Common;
 using Microsoft.EntityFrameworkCore;
+using Asp.Versioning;
 
 
 namespace HabitTracker.Api.Controllers
 {
-    [Route("api/habits")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/habits")]
     [ApiController]
     public class HabitController : APIControllerBase
     {

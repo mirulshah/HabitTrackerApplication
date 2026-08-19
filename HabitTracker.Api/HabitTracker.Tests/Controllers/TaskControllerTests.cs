@@ -104,6 +104,65 @@ namespace HabitTracker.Tests.Controllers
             response.Id.Should().Be(seededTask.Id);
             response.Title.Should().Be("Finish Report");
         }
-    }
 
+        [Fact]
+        public async Task GetTaskById_WhenTaskDoesNotExist_ReturnsNotFound()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var controller = CreateController(userId, out _);
+            var nonExistentTaskId = Guid.NewGuid();
+            // Act
+            var result = await controller.Get(nonExistentTaskId);
+            // Assert
+            result.Result.Should().BeOfType<NotFoundResult>().Which.StatusCode.Should().Be(404);
+        }
+
+        [Fact]
+        public async Task GetTaskById_WhenTaskBelongsToDifferentUser_ReturnsNotFound()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var controller = CreateController(userId, out var db);
+            var otherUserId = Guid.NewGuid();
+            var seededTask = await TestDbContextFactory.SeedTaskAsync(db, otherUserId, "Finish Report");
+            // Act
+            var result = await controller.Get(seededTask.Id);
+            // Assert
+            result.Result.Should().BeOfType<NotFoundResult>().Which.StatusCode.Should().Be(404);
+        }
+
+        [Fact]
+        public async Task PutTaskById_WithValidRequest_UpdateAllFields() 
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var controller = CreateController(userId, out var db);
+            var seededTask = await TestDbContextFactory.SeedTaskAsync(db, userId, "Initial Title");
+
+            var request = new UpdateTaskRequest
+            {
+                Title = "Updated Title",
+                Description = "Updated Description",
+                Priority = 2,
+                DueDate = DateTime.UtcNow.AddDays(5),
+                IsCompleted = true
+            };
+
+            var validator = new UpdateTaskRequestValidator();
+
+            var result = await controller.Put(seededTask.Id,request, validator);
+
+            var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+            var response = okResult.Value.Should().BeAssignableTo<TaskResponse>().Subject;
+
+            response.Title.Should().Be("Updated Title");
+            response.Description.Should().Be("Updated Description"); 
+            response.Priority.Should().Be(2);
+            response.IsCompleted.Should().BeTrue();
+
+            var savedTask = await db.Tasks.FindAsync(response.Id);
+            savedTask!.Title.Should().Be("Updated Title");
+        }
+    }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Asp.Versioning;
 using System.Text;
 
 namespace HabitTracker.Api.Extensions
@@ -8,9 +9,10 @@ namespace HabitTracker.Api.Extensions
 {
     public static class ServiceExtensions
     {
-        public static IServiceCollection AddSwaggerWithJwtAuth(this IServiceCollection services) 
+        public static IServiceCollection AddSwaggerWithJwtAuth(this IServiceCollection services)
         {
-            services.AddSwaggerGen(options => {
+            services.AddSwaggerGen(options =>
+            {
                 var jwtSecurityScheme = new OpenApiSecurityScheme
                 {
                     Scheme = "bearer",
@@ -57,8 +59,25 @@ namespace HabitTracker.Api.Extensions
             return services;
         }
 
+
+        public static IServiceCollection ExtensionApiVersioning(this IServiceCollection services)
+        {
+            services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+            }).AddMvc()
+                .AddApiExplorer(options =>
+                {
+                    options.GroupNameFormat = "'v'VVV";
+                    options.SubstituteApiVersionInUrl = true;
+                });
+
+            return services;
+        }
     }
-   
+
 
 
 }

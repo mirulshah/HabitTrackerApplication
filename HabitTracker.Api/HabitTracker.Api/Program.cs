@@ -10,6 +10,7 @@ using HabitTracker.Infrastructure.Seeding;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using Asp.Versioning.ApiExplorer;
 
 namespace HabitTracker.Api
 {
@@ -45,6 +46,8 @@ namespace HabitTracker.Api
                 .WriteTo.File("logs/habittracker-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7);
             });
 
+            builder.Services.ExtensionApiVersioning();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -57,7 +60,17 @@ namespace HabitTracker.Api
                 await DbSeeder.SeedAsync(db, passwordHasher);
 
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+                    foreach (var description in provider.ApiVersionDescriptions)
+                    {
+                        options.SwaggerEndpoint(
+                            $"/swagger/{description.GroupName}/swagger.json",
+                            description.GroupName.ToUpperInvariant());
+                    }
+                });
 
 
             }

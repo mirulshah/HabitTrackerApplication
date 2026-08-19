@@ -6,13 +6,15 @@ using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using HabitTracker.Domain.Entities;
 using HabitTracker.Application.Common;
+using Asp.Versioning;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace HabitTracker.Api.Controllers
 {
-    [Route("api/tasks")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/tasks")]
     [ApiController]
     
     public class TasksController : APIControllerBase
