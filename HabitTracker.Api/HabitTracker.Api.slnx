@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../../../../../../source/C# tutorials/HabitTracker.Api/HabitTracker.Api/HabitTracker.Api.csproj" />
+  <Project Path="../../../../../../source/C# tutorials/HabitTracker.Api/HabitTracker.Application/HabitTracker.Application.csproj" />
+  <Project Path="../../../../../../source/C# tutorials/HabitTracker.Api/HabitTracker.Domain/HabitTracker.Domain.csproj" />
+  <Project Path="../../../../../../source/C# tutorials/HabitTracker.Api/HabitTracker.Infrastructure/HabitTracker.Infrastructure.csproj" />
+  <Project Path="../../../../../../source/C# tutorials/HabitTracker.Api/HabitTracker.Tests/HabitTracker.Tests.csproj" Id="b6026efa-82f3-42c4-9ef8-43d289da526e" />
+</Solution>
