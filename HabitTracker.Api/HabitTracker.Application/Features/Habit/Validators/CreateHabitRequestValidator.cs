@@ -5,9 +5,9 @@ using FluentValidation;
 
 namespace HabitTracker.Application.Features.Habit.Validators
 {
-    public class CreateTaskRequestValidator : AbstractValidator<CreateHabitRequest>
+    public class CreateHabitRequestValidator : AbstractValidator<CreateHabitRequest>
     {
-        public CreateTaskRequestValidator() 
+        public CreateHabitRequestValidator() 
         {
             RuleFor(x => x.Title)
                 .NotEmpty()
