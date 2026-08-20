@@ -1,4 +1,5 @@
 ﻿using HabitTracker.Domain.Entities;
+using HabitTracker.Domain.Enum;
 using HabitTracker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -33,6 +34,31 @@ namespace HabitTracker.Tests.TestHelpers
             db.Tasks.Add(task);
             await db.SaveChangesAsync();
             return task;
+        }
+
+        public static async Task<(Habit Habit, HabitLog Log)> SeedHabitWithTodayLogAsync(AppDbContext db, Guid userId, string title = "Sample Habit", HabitFrequency frequency = HabitFrequency.Daily)
+        {
+            var habit = new Habit
+            {
+                UserId = userId,
+                Title = title,
+                Frequency = frequency,
+            };
+
+            db.Habits.Add(habit);
+            await db.SaveChangesAsync();
+
+            var log = new HabitLog
+            {
+                HabitId = habit.Id,
+                CompletedDate = DateTime.UtcNow.Date,
+            };
+
+
+            db.HabitLogs.Add(log);
+            await db.SaveChangesAsync();
+
+            return (habit, log);
         }
     }
 }

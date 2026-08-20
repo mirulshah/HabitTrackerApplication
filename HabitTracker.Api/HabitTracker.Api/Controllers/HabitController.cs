@@ -160,7 +160,7 @@ namespace HabitTracker.Api.Controllers
                 .Include(h => h.Logs)
                 .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
 
-            if(habit == null)
+            if (habit == null)
             {
                 return NotFound();
             }
@@ -192,6 +192,41 @@ namespace HabitTracker.Api.Controllers
             };
 
             return Ok(response);
+        }
+
+        [HttpDelete("{id}/log/today")]
+
+        public async Task<IActionResult> Incomplete(Guid id)
+        {
+            var today = DateTime.UtcNow.Date;
+
+            var userId = GetCurrentUserId();
+
+            var result = await _db.Habits.Where(h => h.Id == id && h.UserId == userId).Select(h => new
+            {
+                Habit = h,
+                TodayLog = h.Logs.FirstOrDefault(l => l.CompletedDate == today)
+            }).FirstOrDefaultAsync();
+                            
+
+            //var habit = await _db.Habits.FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
+
+            if(result is null)
+            {
+                return NotFound();
+            }
+
+            //var log = await _db.HabitLogs.FirstOrDefaultAsync(l => l.HabitId == habit.Id && l.CompletedDate == today);
+
+            if (result.TodayLog is null)
+            {
+                _logger.LogWarning("Habit is still incompleted today");
+                return Conflict("Habit is still incompleted today");
+            }
+
+            _db.HabitLogs.Remove(result.TodayLog);
+            await _db.SaveChangesAsync();
+            return NoContent();
         }
 
 
