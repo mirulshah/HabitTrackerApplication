@@ -1,0 +1,40 @@
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:16
+    container_name: habittracker-pg
+    environment:
+      POSTGRES_DB: HabitTrackerDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - habittracker-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: Docker/DockerFile
+    container_name: habittracker-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=HabitTrackerDb;Username=postgres;Password=postgres"
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: "HabitTracker.Api"
+      Jwt__Audience: "HabitTracker.Client"
+      Jwt__ExpiryMinutes: "15"
+      Jwt__RefreshTokenExpiryDays: "7"
+
+volumes:
+  habittracker-pg-data:

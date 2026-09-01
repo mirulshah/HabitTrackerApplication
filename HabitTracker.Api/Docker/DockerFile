@@ -1,0 +1,32 @@
+# HabitTracker.Api/Docker/Dockerfile
+
+# ---- Build stage ----
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY HabitTracker.Domain/*.csproj HabitTracker.Domain/
+COPY HabitTracker.Application/*.csproj HabitTracker.Application/
+COPY HabitTracker.Infrastructure/*.csproj HabitTracker.Infrastructure/
+COPY HabitTracker.Api/*.csproj HabitTracker.Api/
+
+RUN dotnet restore HabitTracker.Api/HabitTracker.Api.csproj
+
+COPY HabitTracker.Domain/ HabitTracker.Domain/
+COPY HabitTracker.Application/ HabitTracker.Application/
+COPY HabitTracker.Infrastructure/ HabitTracker.Infrastructure/
+COPY HabitTracker.Api/ HabitTracker.Api/
+
+WORKDIR /src/HabitTracker.Api
+RUN dotnet publish -c Release -o /app/publish --no-restore
+
+# ---- Runtime stage ----
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+ENTRYPOINT ["dotnet", "HabitTracker.Api.dll"]

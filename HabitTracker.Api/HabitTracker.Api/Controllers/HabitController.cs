@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using HabitTracker.Application.Common;
 using Microsoft.EntityFrameworkCore;
 using Asp.Versioning;
+using HabitTracker.Application.Features.HabitLog;
 
 
 namespace HabitTracker.Api.Controllers
@@ -227,6 +228,59 @@ namespace HabitTracker.Api.Controllers
             _db.HabitLogs.Remove(result.TodayLog);
             await _db.SaveChangesAsync();
             return NoContent();
+        }
+
+        [HttpGet("{id}/log")]
+        public async Task<ActionResult<HabitLogResponse>> GetLog(Guid id, [FromQuery] HabitLogQueryParameters query) 
+        {
+            var userId = GetCurrentUserId();
+
+            var habit = await _db.Habits.AnyAsync(h => h.Id.Equals(id) && h.UserId == userId);
+
+            if (!habit)
+            {
+                _logger.LogWarning("The habit {habit} does not exist",id);
+                return NoContent();
+            }
+
+            var log = _db.HabitLogs.Where(l => l.HabitId == id);
+
+            if(query.Year.HasValue)
+            {
+               log = log.Where(l => l.CompletedDate.Year == query.Year.Value);
+            }
+
+            if (query.Month.HasValue) 
+            {
+                log = log.Where(l => l.CompletedDate.Month == query.Month.Value);
+            }
+
+            log = (query.SortBy.ToLower(), query.SortDir.ToLower()) switch
+            {
+                ("createdat", "desc") => log.OrderByDescending(l => l.CreatedAt),
+                ("createdat", _) => log.OrderBy(l => l.CreatedAt)
+            };
+
+            var totalCount = await log.CountAsync();
+
+            var items = await log
+                .Skip((query.Page - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .Select(l => new HabitLogResponse
+                { 
+                    Id = l.Id,
+                    CompletedDate = l.CompletedDate
+                }).ToListAsync();
+
+            return Ok(new PagedResult<HabitLogResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = query.Page,
+                PageSize = query.PageSize
+            });
+
+
         }
 
 

@@ -1,0 +1,8 @@
+# .dockerignore (place in solution root, next to HabitTracker.sln)
+**/bin/
+**/obj/
+**/.vs/
+**/logs/
+**/.git/
+**/*.user
+**/appsettings.Development.json
