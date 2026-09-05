@@ -11,6 +11,7 @@ namespace HabitTracker.Domain.Entities
         public string? Description { get; set; }
         public DateTime? DueDate { get; set; }
         public bool IsCompleted { get; set; } = false;
+        public DateTime? CompletedAt { get; set; } = null;
         public int Priority { get; set; }
         public User User { get; set; } = null!;
     }

@@ -28,6 +28,33 @@ namespace HabitTracker.Api.Controllers
             _logger = logger;
         }
 
+        [HttpGet("overview")]
+        public async Task<ActionResult<TaskOverviewResponse>> GetOverview()
+        {
+            var userId = GetCurrentUserId();
+
+            var windowStartDate = DateTime.UtcNow.AddDays(-29); // 29 days ago
+
+            var totalTasks = await _db.Tasks.CountAsync(t => t.UserId == userId);
+            var completedTasks = await _db.Tasks.CountAsync(t => t.UserId == userId && t.IsCompleted);
+
+            var completedTasksInWindow = await _db.Tasks
+                .Where(t => t.UserId == userId && t.IsCompleted && t.CompletedAt.HasValue && t.CompletedAt.Value >= windowStartDate)
+                .CountAsync();
+
+            var averageDailyCompletionCount = totalTasks > 0 ? (int)Math.Round((double)completedTasksInWindow / 30.0 * 100) : 0;
+
+            var averageWeeklyCompletionCount = totalTasks > 0 ? (int)Math.Round((double)completedTasksInWindow / (30.0 / 7) * 100) : 0;
+
+            return Ok(new TaskOverviewResponse
+            {
+                TotalTasks = totalTasks,
+                CompletedTasks = completedTasks,
+                TasksAverageDailyCompletionCount = averageDailyCompletionCount,
+                TasksAverageWeeklyCompletionCount = averageWeeklyCompletionCount
+            });
+        }
+
         // GET: api/<Tasks>
         [HttpGet]
         public async Task<ActionResult<PagedResult<TaskResponse>>> Get([FromQuery] TaskQueryParameters parameters)
@@ -211,7 +238,11 @@ namespace HabitTracker.Api.Controllers
             if (request.Description != null) task.Description = request.Description;
             if (request.DueDate.HasValue) task.DueDate = request.DueDate;
             if (request.Priority.HasValue) task.Priority = request.Priority.Value;
-            if (request.IsCompleted.HasValue) task.IsCompleted = request.IsCompleted.Value;
+            if (request.IsCompleted.HasValue) 
+            { 
+                task.IsCompleted = request.IsCompleted.Value;
+                task.CompletedAt = DateTime.UtcNow; // Set CompletedAt when task is marked as completed
+            }
             await _db.SaveChangesAsync();
             var response = new TaskResponse
             {
@@ -237,6 +268,7 @@ namespace HabitTracker.Api.Controllers
                 return NotFound();
             }
             task.IsCompleted = request.IsCompleted;
+            task.CompletedAt = request.IsCompleted ? DateTime.UtcNow : null;
             await _db.SaveChangesAsync();
             var response = new TaskResponse
             {

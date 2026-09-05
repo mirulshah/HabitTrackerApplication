@@ -38,6 +38,19 @@ namespace HabitTracker.Api
 
             builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
+            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
+            builder.Services.AddCors(options =>
+                            {
+                                options.AddPolicy("AllowFrontend", policy =>
+                                {
+                                    policy.WithOrigins(allowedOrigins)
+                                          .AllowAnyHeader()
+                                          .AllowAnyMethod();
+                                });
+                            });
+
+
             builder.Host.UseSerilog((context, configuration) =>
             {
                 configuration
@@ -72,10 +85,12 @@ namespace HabitTracker.Api
                     }
                 });
 
+                
 
             }
 
             app.UseHttpsRedirection();
+            app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
 
