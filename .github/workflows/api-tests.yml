@@ -40,6 +40,9 @@ jobs:
           dotnet restore
           dotnet build --configuration Release
 
+      - name: Install dotnet-ef tool
+        run: dotnet tool install --global dotnet-ef
+
       - name: Apply database migrations
         working-directory: HabitTracker.Api
         run: dotnet ef database update --project HabitTracker.Infrastructure --startup-project HabitTracker.Api
