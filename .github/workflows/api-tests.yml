@@ -1,0 +1,85 @@
+name: API Automation Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: HabitTrackerDb
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore and build API
+        working-directory: HabitTracker.Api
+        run: |
+          dotnet restore
+          dotnet build --configuration Release
+
+      - name: Apply database migrations
+        working-directory: HabitTracker.Api
+        run: dotnet ef database update --project HabitTracker.Infrastructure --startup-project HabitTracker.Api
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=HabitTrackerDb;Username=postgres;Password=postgres"
+
+      - name: Start the API in the background
+        working-directory: HabitTracker.Api/HabitTracker.Api
+        run: dotnet run --configuration Release --no-build &
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ASPNETCORE_URLS: "http://+:8080"
+          ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=HabitTrackerDb;Username=postgres;Password=postgres"
+          Jwt__Key: ${{ secrets.JWT_KEY }}
+          Jwt__Issuer: "HabitTracker.Api"
+          Jwt__Audience: "HabitTracker.Client"
+          Jwt__ExpiryMinutes: "15"
+          Jwt__RefreshTokenExpiryDays: "7"
+
+      - name: Wait for API to be ready
+        run: |
+          for i in {1..30}; do
+            curl -s http://localhost:8080/swagger/index.html && break
+            echo "Waiting for API..."
+            sleep 2
+          done
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python test dependencies
+        working-directory: habit-tracker-tests
+        run: pip install pytest requests python-dotenv
+
+      - name: Run automated API tests
+        working-directory: habit-tracker-tests
+        run: pytest tests/ -v
+        env:
+          BASE_URL: "http://localhost:8080/api/v1"
+          TEST_EMAIL: "demo@habittracker.com"
+          TEST_PASSWORD: "Password123!"
