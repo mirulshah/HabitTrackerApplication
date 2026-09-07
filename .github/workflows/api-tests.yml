@@ -51,7 +51,7 @@ jobs:
 
       - name: Start the API in the background
         working-directory: HabitTracker.Api/HabitTracker.Api
-        run: dotnet run --configuration Release --no-build &
+        run: dotnet run --configuration Release --no-build > ../../api.log 2>&1 &
         env:
           ASPNETCORE_ENVIRONMENT: Development
           ASPNETCORE_URLS: "http://+:8080"
@@ -69,6 +69,10 @@ jobs:
             echo "Waiting for API..."
             sleep 2
           done
+
+      - name: Show API logs (always, even on success, to verify startup)
+        if: always()
+        run: cat api.log || echo "No log file found"
 
       - name: Set up Python
         uses: actions/setup-python@v5
